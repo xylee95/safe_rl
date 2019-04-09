@@ -96,9 +96,8 @@ def traj_segment_generator(adv_generator, master_pol,sub_policies, env, horizon,
         #class, ob <- perturbation
         #cur_subpolicy <- ob[adv state]
         #ob = ob_
-        #latent = env.env.goal
-        #latent = env.env.goal
-        ob, latent = adv_generator.perturb(ob_,t)
+
+        ob, latent, render_attack = adv_generator.perturb(ob_, t)
         counts[latent] += 1
         cur_subpolicy = latent
 
@@ -128,7 +127,7 @@ def traj_segment_generator(adv_generator, master_pol,sub_policies, env, horizon,
         if macro_ac == 1:
             if cur_pol == 0: cur_pol = 1
             else: cur_pol = 0
-        #cur_pol = latent
+
         counts_action[cur_pol] += 1
         #counts[macro_ac] += 1
         #macro_ac = latent
@@ -175,8 +174,10 @@ def traj_segment_generator(adv_generator, master_pol,sub_policies, env, horizon,
             env.render()        # print(info)
             pass
         '''
-        #if x%20 == 0:
-        #env.render()
+        
+        #env.render(render_attack, ob)
+        env.render_xy(render_attack, ob)
+
         if cur_ep_len > 20:
             new = True
         cur_ep_ret += rew
@@ -240,7 +241,7 @@ def prepare_allrolls(allrolls, gamma, lam, num_subpolicies):
     test_seg["tdlamret"] = test_seg["adv"] + test_seg["vpred"]
 
     split_test = split_segments(test_seg, num_subpolicies)
-    print(len(split_test[0]['ob']),len(split_test[1]['ob']))
+    print('Ratio of subpolicy 1 to subpolicy 2:',len(split_test[0]['ob']),len(split_test[1]['ob']))
     return split_test
 
 def split_segments(seg, num_subpolicies):

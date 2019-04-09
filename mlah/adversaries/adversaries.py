@@ -26,7 +26,7 @@ def unbounded_bias_perturb(ob,space,power,augmented):
     return ob
 
 def symetric_mirror_perturb(ob,space,power,augmented):
-    for i in range(2,len(ob)-1):
+    for i in range(len(ob)):
         ob[i] = max(min(ob[i]*-1,space.high[i]),space.low[i])
     return ob
 
@@ -58,8 +58,21 @@ def stoch_bias_grid(ob,space,power,augmented):
     return ob
 
 
-def grid_reflect(ob, soace,power, augmented):
-    ob[0] = (-(ob[0]-11//2)+11//2)%11
+def grid_reflect(ob, space,power, augmented):
+    ob[0] = (-(ob[0]-21//2)+21//2)%21
+    return ob
+
+def grid_bias(ob, space, power, augmented):
+    ob[0] = ob[0] + 5
+    return ob
+
+def grid_linear(ob, space, power, augmented):
+    ob[0] = 2*ob[0] + 1
+    ob[1] = 1.5*ob[0] - 2
+    return ob
+
+def grid_reflect_bias(ob, space,power, augmented):
+    ob[0] = (-(ob[0]-21//2)+21//2)%21 + 3
     return ob
 
 def l2norm(x,x_):
@@ -69,7 +82,9 @@ def l2norm(x,x_):
     return math.sqrt(l2square)
 
 class adv_gen():
-    def __init__(self,w,ob_space,perturb_func=stoch_perturb,intermittent=False,interval = [1024,1024], delay=0,augmented=True):
+    #interval[duration of attack, duration until next attack]
+    #attack only when randnum(0,1) < w
+    def __init__(self,w,ob_space,perturb_func=stoch_perturb,intermittent=False,interval = [10000,10000], delay=0,augmented=True):
         self.w = w
         self.perturb_func = perturb_func
         self.space = ob_space
@@ -83,9 +98,12 @@ class adv_gen():
         self.attack_timer = interval[0]
         self.isattack = False
         self.delay = delay
+
     def perturb(self,ob_,t,power=1.0):
         ob = copy.deepcopy(ob_)
         self.timer_delay += 1
+        #countdown to attack
+        #print('Time to attack: ', self.until_attack_timer)
         if(self.until_attack_timer == 0): self.isattack = True
 
         if(self.isattack):
@@ -96,13 +114,16 @@ class adv_gen():
             else:
                 self.attack_timer -= 1
         self.until_attack_timer -= 1
+
         if(self.isattack and t!=0 and np.random.uniform(0,1) < self.w and self.timer_delay > self.delay):
+            #print('Attacking')
+            #addtional attack identifier returned for plotting. 1 for attacked, 0 for no attacksss
             if self.augmented:
-                return self.perturb_func(ob,self.space,power,self.augmented),1
+                return self.perturb_func(ob,self.space,power,self.augmented),1, 1
             else:
-                return self.perturb_func(ob,self.space,power,self.augmented),0
+                return self.perturb_func(ob,self.space,power,self.augmented),0, 1
         else:
-            return ob, 0
+            return ob, 0, 0
 
 
 

@@ -12,7 +12,8 @@ import sys
 import shutil
 import subprocess
 import master
-#from adversaries import adv_gen
+import os
+os.environ["CUDA_VISIBLE_DEVICES"]="2"
 
 def str2bool(v):
     if v.lower() in ('yes', 'true', 't', 'y', '1'):
@@ -37,6 +38,7 @@ parser.add_argument('--train_time', type=int)
 parser.add_argument('--save', type=str)
 #parser.add_argument('-s', action='store_true')
 parser.add_argument('--load', type=str)
+parser.add_argument('--id_number', type=int)
 args = parser.parse_args()
 
 #RELPATH = osp.join(args.save)

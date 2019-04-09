@@ -22,7 +22,8 @@ def start(args, workerseed, rank, comm):
     env_eval = gym.make(args.task)
 
     env.seed(workerseed)
-    #np.random.seed(workerseed)
+    env.set_experiment_id(args.id_number)
+
     ob_space = env.observation_space
     master_ob = gym.spaces.Box(np.array([-100,-100],dtype=np.float32),np.array([100,100],dtype=np.float32))
     ac_space = env.action_space
@@ -37,36 +38,31 @@ def start(args, workerseed, rank, comm):
     # observation in.
     ob = U.get_placeholder(name="ob", dtype=tf.float32, shape=[None, ob_space.shape[0]])
     adv_ob = U.get_placeholder(name="adv_ob",dtype=tf.float32, shape=[None,master_ob.shape[0]])
-    # ob = U.get_placeholder(name="ob", dtype=tf.float32, shape=[None, 104])
+
     master_policy = Policy(name="master", ob=adv_ob, ac_space=0, hid_size=16, num_hid_layers=2, num_subpolicies=2)
     old_master_policy = Policy(name="old_master", ob=adv_ob, ac_space=0, hid_size=16, num_hid_layers=2, num_subpolicies=2)
-    # features = Features(name="features", ob=ob)
+
     sub_policies = [SubPolicy(name="sub_policy_%i" % x, ob=ob, ac_space=ac_space, hid_size=32, num_hid_layers=2) for x in range(num_subs)]
     old_sub_policies = [SubPolicy(name="old_sub_policy_%i" % x, ob=ob, ac_space=ac_space, hid_size=32, num_hid_layers=2) for x in range(num_subs)]
-    attack_grad = U.function([ob],tf.nn.l2_normalize(tf.gradients(sub_policies[0].vpred, ob)[0]))
+
     learner = Learner(env,master_policy,old_master_policy,sub_policies, old_sub_policies, comm, clip_param=0.2, entcoeff=0, optim_epochs=10, optim_stepsize=3e-4, optim_batchsize=64)
-    #adv_generator = adv_gen(ob_space,attack_grad,delay=args.warmup_time*num_rollouts)
-    #adv_generator_eval = adv_gen(ob_space,attack_grad,delay=args.warmup_time*num_rollouts,dummy=True)
-    adv_generator = adv_gen(1.0, ob_space, perturb_func=grid_reflect, delay=num_rollouts*args.warmup_time,augmented=args.augment)
-    adv_generator_eval = adv_gen(-1.0, ob_space, perturb_func=stoch_perturb)
+
+    adv_generator = adv_gen(1.0, ob_space, perturb_func= grid_reflect_bias, delay=num_rollouts*args.warmup_time,augmented=args.augment)
+    adv_generator_eval = adv_gen(-1.0, ob_space, perturb_func= grid_reflect_bias)
+
     override=None
-    rollout = rollouts.traj_segment_generator(adv_generator,master_policy, sub_policies, env, num_rollouts, stochastic=True, args=args)
-    rollout_eval = rollouts.traj_segment_generator(adv_generator_eval,master_policy,sub_policies, env_eval, 1024, stochastic=False, args=args)
+
+    rollout = rollouts.traj_segment_generator(adv_generator, master_policy, sub_policies, env, num_rollouts, stochastic=True, args=args)
+    rollout_eval = rollouts.traj_segment_generator(adv_generator_eval, master_policy, sub_policies, env_eval, 1, stochastic=False, args=args)
 
     ret_buffer = deque(maxlen=20)
     ret_buffer_eval = deque(maxlen=20)
 
     fname = './data/'+args.filename +'.csv'
-    if not os.path.exists(os.path.dirname(fname)):
-        try:
-            os.makedirs(os.path.dirname(fname))
-        except OSError as exc: # Guard against race condition
-            if exc.errno != errno.EEXIST:
-                raise
     file  = open(fname,'w')
     writer = csv.writer(file)
     if args.load is not None:
-        fname = os.path.join("./savedir/",args.load, args.load)
+        fname = osp.join("./savedir/",args.load, args.load)
         U.load_state(fname)
     #saver = tf.train.Saver()
 
@@ -85,7 +81,9 @@ def start(args, workerseed, rank, comm):
 
         mini_ep += 1
         if(mini_ep==args.warmup_time):
-            print("start training with")
+            print("===================")
+            print("START TRAINING WITH")
+            print("===================")
             args.pretrain = -1
             sub_train = [False,True]
         #if(mini_ep == 200):
@@ -113,8 +111,9 @@ def start(args, workerseed, rank, comm):
         writer.writerow(fields)
 
         print("rollout: {}, avg ep r: {}, avg eval ep r: {}".format(mini_ep,ret_mean, ret_eval_mean))
+        print("--------------------------------------------------")
     if args.save is not None:
-        fname = os.path.join("savedir/", args.save, args.save)
+        fname = osp.join("savedir/", args.save, args.save)
         U.save_state(fname)
         #saver.save(U.get_session(), "./savedir/test/mc30")
             #if args.s:

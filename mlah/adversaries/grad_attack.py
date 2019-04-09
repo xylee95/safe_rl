@@ -3,7 +3,7 @@ import copy
 from dataset import Dataset
 
 class adv_gen():
-    def __init__(self,ob_space,grad_func, interval = [5000,5000],delay=0,dummy=False):
+    def __init__(self,ob_space,grad_func, interval = [1024,1024],delay=0,dummy=False):
         self.grad_func = grad_func
         self.space = ob_space
         self.timer_delay = delay
@@ -41,6 +41,6 @@ class adv_gen():
         for i in range(10):
             grad = self.grad_func(np.expand_dims(ob_attack, axis=0))
             ob_attack -= 0.2*grad[0]
-        #ob_attack[0] = min(max(ob_attack[0],0),11)
-        #ob_attack[1] = min(max(ob_attack[1],0),11)
-        return ob_attack
+        ob_attack[0] = min(max(ob_attack[0],0),11)
+        ob_attack[1] = min(max(ob_attack[1],0),11)
+        return ob_attack.astype(int)
