@@ -59,11 +59,23 @@ def stoch_bias_grid(ob,space,power,augmented):
 
 
 def grid_reflect(ob, space,power, augmented):
-    ob[0] = (-(ob[0]-21//2)+21//2)%21
+
+    ob[0] = (-(ob[0]-21//2)+21//2)%21 #x
+    ob[1] = (-(ob[1]-21//2)+21//2)%21 #y
+    return ob
+
+def grid_reflect_x(ob, space,power, augmented):  
+    ob[0] = (-(ob[0]-21//2)+21//2)%21 #x
+    return ob
+
+def grid_reflect_y(ob, space,power, augmented):
+    ob[1] = (-(ob[1]-21//2)+21//2)%21 #y
     return ob
 
 def grid_bias(ob, space, power, augmented):
-    ob[0] = ob[0] + 5
+    ob[0] = ob[0] + 12 #x
+    ob[1] = ob[1] + 12 #y
+    #better bias attack
     return ob
 
 def grid_linear(ob, space, power, augmented):
@@ -72,7 +84,8 @@ def grid_linear(ob, space, power, augmented):
     return ob
 
 def grid_reflect_bias(ob, space,power, augmented):
-    ob[0] = (-(ob[0]-21//2)+21//2)%21 + 3
+    ob[0] = (-(ob[0]-21//2)+21//2)%21 #reflect x
+    ob[1] = ob[1] - 12 #bias y
     return ob
 
 def l2norm(x,x_):
@@ -84,7 +97,7 @@ def l2norm(x,x_):
 class adv_gen():
     #interval[duration of attack, duration until next attack]
     #attack only when randnum(0,1) < w
-    def __init__(self,w,ob_space,perturb_func=stoch_perturb,intermittent=False,interval = [10000,10000], delay=0,augmented=True):
+    def __init__(self,w,ob_space,perturb_func=stoch_perturb,intermittent=False,interval = [500,500], delay=0,augmented=True):
         self.w = w
         self.perturb_func = perturb_func
         self.space = ob_space
@@ -124,8 +137,6 @@ class adv_gen():
                 return self.perturb_func(ob,self.space,power,self.augmented),0, 1
         else:
             return ob, 0, 0
-
-
 
 
     def sample_action_space(self,pi,env):

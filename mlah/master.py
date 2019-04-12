@@ -47,8 +47,8 @@ def start(args, workerseed, rank, comm):
 
     learner = Learner(env,master_policy,old_master_policy,sub_policies, old_sub_policies, comm, clip_param=0.2, entcoeff=0, optim_epochs=10, optim_stepsize=3e-4, optim_batchsize=64)
 
-    adv_generator = adv_gen(1.0, ob_space, perturb_func= grid_reflect_bias, delay=num_rollouts*args.warmup_time,augmented=args.augment)
-    adv_generator_eval = adv_gen(-1.0, ob_space, perturb_func= grid_reflect_bias)
+    adv_generator = adv_gen(1.0, ob_space, perturb_func= grid_reflect_x, delay=num_rollouts*args.warmup_time,augmented=args.augment)
+    adv_generator_eval = adv_gen(-1.0, ob_space, perturb_func= grid_reflect_x)
 
     override=None
 
@@ -80,7 +80,7 @@ def start(args, workerseed, rank, comm):
     while mini_ep < args.warmup_time + train_time:
 
         mini_ep += 1
-        if(mini_ep==args.warmup_time):
+        if(mini_ep==args.warmup_time or args.warmup_time==0):
             print("===================")
             print("START TRAINING WITH")
             print("===================")

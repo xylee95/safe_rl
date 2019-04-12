@@ -13,7 +13,7 @@ import shutil
 import subprocess
 import master
 import os
-os.environ["CUDA_VISIBLE_DEVICES"]="2"
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
 def str2bool(v):
     if v.lower() in ('yes', 'true', 't', 'y', '1'):
@@ -57,6 +57,8 @@ args = parser.parse_args()
 #         pass
 
 def train():
+    # config = tf.ConfigProto()
+    # config.gpu_options.allow_growth = True
     num_timesteps=1e9
     seed = 1401
     rank = MPI.COMM_WORLD.Get_rank()

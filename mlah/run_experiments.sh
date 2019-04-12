@@ -1,14 +1,14 @@
 #!/bin/bash
 set -e
 
-savename="mirror_bias_3"
+savename="mirror_x_500"
 environment="GridWorld-v0"
 num_subs=2
 augment="True"
 num_rollouts=1024
-train_time=700
+train_time=450
 continue_iter="False"
-warmup=100
+warmup=50
 load=""
 save="test"
 tag="feature_test"
